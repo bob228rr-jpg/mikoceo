@@ -17,26 +17,33 @@ const statePets = document.querySelectorAll("[data-state-pet]");
 const buttons = document.querySelectorAll("[data-state]");
 const companion = document.querySelector(".pet-companion");
 const companionFrame = document.querySelector(".companion-frame");
-const lore = document.querySelector("#lore");
+const sections = {
+  hero: document.querySelector(".hero"),
+  pet: document.querySelector("#pet"),
+  lore: document.querySelector("#lore"),
+  signal: document.querySelector("#signal"),
+};
 
 let selectedState = "idle";
 let stateFrame = 0;
 let stateLastFrameAt = 0;
 
-const isTouch = matchMedia("(pointer: coarse)").matches || window.innerWidth <= 860;
+const isCompact = () => matchMedia("(pointer: coarse)").matches || window.innerWidth <= 860;
+
 const companionState = {
-  x: isTouch ? 18 : 32,
-  y: isTouch ? 86 : Math.max(180, window.innerHeight - 190),
-  targetX: isTouch ? 18 : 32,
-  targetY: isTouch ? 86 : Math.max(180, window.innerHeight - 190),
+  x: isCompact() ? 18 : 32,
+  y: isCompact() ? 86 : Math.max(180, window.innerHeight - 190),
+  targetX: isCompact() ? 18 : 32,
+  targetY: isCompact() ? 86 : Math.max(180, window.innerHeight - 190),
   frame: 0,
   lastFrameAt: 0,
   state: "waving",
-  lastPointerAt: 0,
+  mood: "idle",
+  routeIndex: 0,
+  nextRouteAt: performance.now() + 2200,
   waveUntil: performance.now() + 1700,
   readingLore: false,
-  lastScrollY: window.scrollY,
-  lastScrollAt: performance.now(),
+  readingSettledAt: 0,
 };
 
 function spritePosition(element, stateName, frame) {
@@ -61,50 +68,136 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
-function setCompanionTarget(x, y, wave = false) {
-  const scale = isTouch ? 0.34 : 0.62;
+function petScale() {
+  if (window.innerWidth <= 520) {
+    return 0.34;
+  }
+
+  if (window.innerWidth <= 860) {
+    return 0.38;
+  }
+
+  return 0.62;
+}
+
+function safePoint(x, y) {
+  const scale = petScale();
   const petWidth = FRAME_WIDTH * scale;
   const petHeight = FRAME_HEIGHT * scale;
-  companionState.targetX = clamp(x - petWidth / 2, 8, window.innerWidth - petWidth - 8);
-  companionState.targetY = clamp(y - petHeight * 0.78, 78, window.innerHeight - petHeight - 8);
-  companionState.lastPointerAt = performance.now();
 
-  if (wave) {
-    companionState.waveUntil = performance.now() + 900;
-  }
+  return {
+    x: clamp(x, 8, window.innerWidth - petWidth - 8),
+    y: clamp(y, 78, window.innerHeight - petHeight - 8),
+  };
 }
 
-function loreTarget() {
-  const copy = lore?.querySelector("div");
-  const box = copy?.getBoundingClientRect();
-
-  if (!box) {
-    return null;
-  }
-
-  const x = isTouch ? window.innerWidth - 52 : box.left - 24;
-  const y = box.top + Math.min(box.height * 0.72, 260);
-  return { x, y };
+function sectionBox(name) {
+  return sections[name]?.getBoundingClientRect() || null;
 }
 
-function chooseCompanionState(distance, dx, now) {
-  if (now < companionState.waveUntil) {
+function getRoutePoints() {
+  const compact = isCompact();
+  const hero = sectionBox("hero");
+  const pet = sectionBox("pet");
+  const lore = sectionBox("lore");
+  const signal = sectionBox("signal");
+  const points = [];
+
+  if (hero) {
+    points.push({
+      id: "hero-left",
+      mood: "idle",
+      ...safePoint(compact ? 18 : hero.left + 28, compact ? 86 : hero.bottom - 160),
+    });
+
+    points.push({
+      id: "hero-art",
+      mood: "waving",
+      ...safePoint(compact ? 78 : hero.right - 210, compact ? 148 : hero.top + 420),
+    });
+  }
+
+  if (pet) {
+    points.push({
+      id: "pet-block",
+      mood: "jumping",
+      ...safePoint(compact ? window.innerWidth - 98 : pet.left + 120, pet.top + 150),
+    });
+  }
+
+  if (lore) {
+    const copy = lore.querySelector("div")?.getBoundingClientRect() || lore;
+    const loreX = compact ? copy.right - 92 : copy.left - 88;
+    const loreY = compact ? copy.top + 22 : copy.top + Math.min(copy.height * 0.62, 230);
+
+    points.push({
+      id: "lore-read",
+      mood: "review",
+      ...safePoint(loreX, loreY),
+    });
+  }
+
+  if (signal) {
+    points.push({
+      id: "signal",
+      mood: "waving",
+      ...safePoint(compact ? 22 : signal.right - 190, signal.top + 130),
+    });
+  }
+
+  return points.length > 0
+    ? points
+    : [{ id: "fallback", mood: "idle", ...safePoint(24, window.innerHeight - 180) }];
+}
+
+function setAutonomousTarget(point, timestamp) {
+  companionState.targetX = point.x;
+  companionState.targetY = point.y;
+  companionState.mood = point.mood;
+
+  if (point.mood === "waving") {
+    companionState.waveUntil = timestamp + 1100;
+  }
+
+  companionState.nextRouteAt = timestamp + 3200 + Math.random() * 2600;
+}
+
+function chooseNextAutonomousTarget(timestamp, forceLore = false) {
+  const points = getRoutePoints();
+  const lorePoint = points.find((point) => point.id === "lore-read");
+
+  if ((forceLore || companionState.readingLore) && lorePoint) {
+    setAutonomousTarget(lorePoint, timestamp);
+    return;
+  }
+
+  companionState.routeIndex = (companionState.routeIndex + 1) % points.length;
+  setAutonomousTarget(points[companionState.routeIndex], timestamp);
+}
+
+function chooseCompanionState(distance, dx, timestamp) {
+  if (timestamp < companionState.waveUntil) {
     return "waving";
   }
 
-  if (companionState.readingLore && distance < 42) {
-    return "review";
-  }
-
-  if (distance > 20) {
+  if (distance > 18) {
     return dx < 0 ? "running-left" : "running-right";
   }
 
-  if (companionState.readingLore) {
-    return "waiting";
+  if (companionState.readingLore && companionState.mood === "review") {
+    const readingTime = timestamp - companionState.readingSettledAt;
+    return readingTime < 2600 ? "review" : "waiting";
   }
 
-  return "idle";
+  if (companionState.mood === "jumping") {
+    return "jumping";
+  }
+
+  if (companionState.mood === "waving") {
+    return "waving";
+  }
+
+  return companionState.mood === "waiting" ? "waiting" : "idle";
 }
 
 function updateCompanion(timestamp) {
@@ -112,23 +205,28 @@ function updateCompanion(timestamp) {
     return;
   }
 
-  if (companionState.readingLore) {
-    const target = loreTarget();
-    if (target) {
-      setCompanionTarget(target.x, target.y);
-    }
+  if (timestamp >= companionState.nextRouteAt) {
+    chooseNextAutonomousTarget(timestamp);
   }
 
   const dx = companionState.targetX - companionState.x;
   const dy = companionState.targetY - companionState.y;
   const distance = Math.hypot(dx, dy);
-  const speed = isTouch ? 0.075 : 0.11;
+  const speed = isCompact() ? 0.055 : 0.075;
 
   companionState.x += dx * speed;
   companionState.y += dy * speed;
   companion.style.setProperty("--pet-x", `${companionState.x}px`);
   companion.style.setProperty("--pet-y", `${companionState.y}px`);
   companion.classList.toggle("is-reading", companionState.readingLore);
+
+  if (distance < 18 && companionState.readingLore && companionState.readingSettledAt === 0) {
+    companionState.readingSettledAt = timestamp;
+  }
+
+  if (!companionState.readingLore) {
+    companionState.readingSettledAt = 0;
+  }
 
   const nextState = chooseCompanionState(distance, dx, timestamp);
   if (nextState !== companionState.state) {
@@ -166,64 +264,45 @@ buttons.forEach((button) => {
   button.addEventListener("click", () => setState(button.dataset.state));
 });
 
-if (!isTouch) {
-  window.addEventListener("pointermove", (event) => {
-    if (event.pointerType === "mouse") {
-      setCompanionTarget(event.clientX, event.clientY);
-    }
-  });
-}
-
-window.addEventListener("pointerdown", (event) => {
-  setCompanionTarget(event.clientX, event.clientY, true);
+window.addEventListener("pointerdown", () => {
+  companionState.waveUntil = performance.now() + 900;
 });
 
 window.addEventListener(
   "scroll",
   () => {
-    const now = performance.now();
-    const delta = Math.abs(window.scrollY - companionState.lastScrollY);
-    companionState.lastScrollY = window.scrollY;
-    companionState.lastScrollAt = now;
-
-    if (isTouch && delta > 8) {
-      const target = loreTarget();
-      if (companionState.readingLore && target) {
-        setCompanionTarget(target.x, target.y);
-      }
+    if (companionState.readingLore) {
+      chooseNextAutonomousTarget(performance.now(), true);
     }
   },
   { passive: true },
 );
 
-if (lore && "IntersectionObserver" in window) {
+if (sections.lore && "IntersectionObserver" in window) {
   const observer = new IntersectionObserver(
     ([entry]) => {
-      companionState.readingLore = entry.isIntersecting && entry.intersectionRatio > 0.28;
-
-      if (companionState.readingLore) {
-        const target = loreTarget();
-        if (target) {
-          setCompanionTarget(target.x, target.y);
-        }
+      const isReading = entry.isIntersecting && entry.intersectionRatio > 0.28;
+      if (isReading === companionState.readingLore) {
+        return;
       }
+
+      companionState.readingLore = isReading;
+      companionState.readingSettledAt = 0;
+      chooseNextAutonomousTarget(performance.now(), isReading);
     },
     { threshold: [0.28, 0.5, 0.72] },
   );
 
-  observer.observe(lore);
+  observer.observe(sections.lore);
 }
 
 window.addEventListener("resize", () => {
   companionState.x = clamp(companionState.x, 8, window.innerWidth - 120);
   companionState.y = clamp(companionState.y, 78, window.innerHeight - 120);
-  const target = companionState.readingLore ? loreTarget() : null;
-
-  if (target) {
-    setCompanionTarget(target.x, target.y);
-  }
+  chooseNextAutonomousTarget(performance.now(), companionState.readingLore);
 });
 
 setState(selectedState);
 spritePosition(companionFrame, companionState.state, companionState.frame);
+chooseNextAutonomousTarget(performance.now());
 requestAnimationFrame(tick);

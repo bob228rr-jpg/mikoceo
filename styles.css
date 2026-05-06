@@ -427,6 +427,8 @@ footer {
 
   .pet-companion {
     --pet-scale: 0.38;
+    --pet-x: 18px;
+    --pet-y: 86px;
     z-index: 8;
   }
 
