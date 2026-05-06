@@ -13,41 +13,43 @@ const states = {
   review: { row: 8, frames: 6, fps: 5 },
 };
 
-const pet = document.querySelector("#pet");
-const statusLabel = document.querySelector("#statusLabel");
+const heroPets = document.querySelectorAll("[data-animated-pet]");
+const statePets = document.querySelectorAll("[data-state-pet]");
 const buttons = document.querySelectorAll("[data-state]");
 
-let currentState = "idle";
-let frame = 0;
+let selectedState = "idle";
+let heroFrame = 0;
+let stateFrame = 0;
 let lastFrameAt = 0;
 
-function draw() {
-  const state = states[currentState];
-  pet.style.backgroundPosition = `-${frame * FRAME_WIDTH}px -${
+function position(element, stateName, frame) {
+  const state = states[stateName];
+  element.style.backgroundPosition = `-${frame * FRAME_WIDTH}px -${
     state.row * FRAME_HEIGHT
   }px`;
 }
 
 function setState(nextState) {
-  currentState = nextState;
-  frame = 0;
-  statusLabel.textContent = nextState;
+  selectedState = nextState;
+  stateFrame = 0;
 
   buttons.forEach((button) => {
     button.classList.toggle("active", button.dataset.state === nextState);
   });
 
-  draw();
+  statePets.forEach((pet) => position(pet, selectedState, stateFrame));
 }
 
 function tick(timestamp) {
-  const state = states[currentState];
-  const interval = 1000 / state.fps;
-
-  if (timestamp - lastFrameAt >= interval) {
-    frame = (frame + 1) % state.frames;
+  if (timestamp - lastFrameAt >= 120) {
+    const heroState = states.waving;
+    const selected = states[selectedState];
+    heroFrame = (heroFrame + 1) % heroState.frames;
+    stateFrame = (stateFrame + 1) % selected.frames;
     lastFrameAt = timestamp;
-    draw();
+
+    heroPets.forEach((pet) => position(pet, "waving", heroFrame));
+    statePets.forEach((pet) => position(pet, selectedState, stateFrame));
   }
 
   requestAnimationFrame(tick);
@@ -57,5 +59,6 @@ buttons.forEach((button) => {
   button.addEventListener("click", () => setState(button.dataset.state));
 });
 
-setState(currentState);
+setState(selectedState);
+heroPets.forEach((pet) => position(pet, "waving", heroFrame));
 requestAnimationFrame(tick);

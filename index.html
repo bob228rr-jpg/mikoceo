@@ -5,47 +5,140 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="PikaCap, a compact pixel-art Codex digital pet."
+      content="Make Pokenons Great Again, a PikaCap mascot landing page."
     />
-    <title>PikaCap</title>
+    <title>Make Pokenons Great Again</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="pet-shell" aria-label="PikaCap digital pet">
-      <section class="pet-panel">
-        <header class="pet-header">
-          <div>
-            <p class="label">Codex digital pet</p>
-            <h1>PikaCap</h1>
+    <header class="topbar">
+      <a class="brand" href="#top">MPGA</a>
+      <nav aria-label="Primary">
+        <a href="#lore">Lore</a>
+        <a href="#pet">Pet</a>
+        <a href="#signal">Signal</a>
+      </nav>
+      <a class="contract" href="#signal">CA_COMING_SOON</a>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="kicker">PikaCap is waking up</p>
+          <h1>Make Pokenons Great Again</h1>
+          <p class="lede">
+            The cap says the whole thing. A yellow pixel mascot, a red slogan,
+            and a tiny digital pet ready to run around the timeline.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#signal">see the signal</a>
+            <a class="button secondary" href="#lore">read lore</a>
           </div>
-          <span class="status" id="statusLabel">idle</span>
-        </header>
-
-        <div class="viewport" aria-live="polite">
-          <div
-            class="pet"
-            id="pet"
-            role="img"
-            aria-label="PikaCap pixel-art mascot"
-          ></div>
         </div>
 
-        <div class="controls" aria-label="Pet states">
-          <button class="active" type="button" data-state="idle">Idle</button>
-          <button type="button" data-state="running">Run</button>
-          <button type="button" data-state="waving">Wave</button>
-          <button type="button" data-state="jumping">Jump</button>
-          <button type="button" data-state="waiting">Wait</button>
-          <button type="button" data-state="review">Review</button>
-          <button type="button" data-state="failed">Failed</button>
+        <div class="hero-art" aria-label="PikaCap animated mascot">
+          <div class="burst">
+            <div class="pet-frame hero-pet" data-animated-pet></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="ticker" aria-label="Highlights">
+        <span>red cap online</span>
+        <span>192x208 pet frames</span>
+        <span>chunky outline</span>
+        <span>flat cel shading</span>
+        <span>MPGA mode active</span>
+      </div>
+
+      <section class="split-section" id="pet">
+        <div class="sprite-card">
+          <div class="pet-frame showcase-pet" data-state-pet></div>
+          <div class="pet-controls" aria-label="Pet states">
+            <button class="active" type="button" data-state="idle">Idle</button>
+            <button type="button" data-state="running">Run</button>
+            <button type="button" data-state="waving">Wave</button>
+            <button type="button" data-state="jumping">Jump</button>
+            <button type="button" data-state="waiting">Wait</button>
+            <button type="button" data-state="review">Review</button>
+            <button type="button" data-state="failed">Failed</button>
+          </div>
         </div>
 
-        <p class="notes">
-          Pixel-art-adjacent mascot sprite, chunky outline, limited palette,
-          flat cel shading, readable red cap slogan.
-        </p>
+        <div class="section-copy">
+          <p class="eyebrow">original mascot</p>
+          <h2>The pet that started the comeback.</h2>
+          <p>
+            PikaCap keeps the mascot compact: black-tipped ears, red cheeks,
+            lightning tail, thick outline, and a bright cap with the slogan up
+            front.
+          </p>
+        </div>
+      </section>
+
+      <section class="lore-grid" id="lore">
+        <div>
+          <p class="eyebrow">the lore</p>
+          <h2>Pokenons got quiet. PikaCap pressed restart.</h2>
+          <p>
+            Every mascot gets a moment where people think the story is over.
+            Then one clean pixel signal hits, the cap comes on, and the whole
+            feed starts checking for the next frame.
+          </p>
+          <p>
+            MPGA is that signal turned into a pet: make it bright again, make
+            it fast again, make it impossible to ignore at 192 by 208.
+          </p>
+        </div>
+
+        <pre class="terminal" aria-label="MPGA terminal status"><code>pet_status --wake-up
+
+sprite atlas: loaded
+cap slogan: readable
+outline weight: chunky
+timeline mood: electric
+
+MPGA mode: online</code></pre>
+      </section>
+
+      <section class="signal" id="signal">
+        <p class="eyebrow">the signal</p>
+        <h2>The post that woke the pet.</h2>
+        <blockquote>
+          <p>
+            The mascot is no longer sitting in the folder. PikaCap is live,
+            moving frame by frame, and wearing the loudest cap on the page.
+          </p>
+          <cite>MPGA Broadcast</cite>
+        </blockquote>
+      </section>
+
+      <section class="reasons" aria-label="Why it matters">
+        <p class="eyebrow">why it matters</p>
+        <div class="reason-grid">
+          <article>
+            <span>01</span>
+            <h3>pet first</h3>
+            <p>The page puts PikaCap in motion instead of showing a raw sheet.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>meme clear</h3>
+            <p>The slogan is the headline, the cap is the proof, the mascot sells it.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>ready to share</h3>
+            <p>A simple landing page that points everyone to the same signal.</p>
+          </article>
+        </div>
       </section>
     </main>
+
+    <footer>
+      <strong>MPGA</strong>
+      <span>PikaCap is not gone. It was loading.</span>
+    </footer>
 
     <script src="./script.js"></script>
   </body>
