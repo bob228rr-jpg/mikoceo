@@ -83,7 +83,6 @@ nav {
 }
 
 .hero,
-.split-section,
 .lore-grid,
 .signal,
 .reasons {
@@ -207,10 +206,6 @@ footer {
   transform-origin: center;
 }
 
-.showcase-pet {
-  transform: scale(1.65);
-}
-
 .pet-companion {
   position: fixed;
   left: 0;
@@ -232,73 +227,6 @@ footer {
 
 .companion-frame {
   transform: none;
-}
-
-.split-section {
-  display: grid;
-  grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(28px, 6vw, 72px);
-  padding: clamp(58px, 9vw, 108px) 0;
-}
-
-.pet-section {
-  scroll-margin-top: 86px;
-}
-
-.sprite-card {
-  border: var(--line);
-  background: var(--mint);
-}
-
-.sprite-card::before {
-  content: "digital pet mode";
-  display: block;
-  padding: 12px 16px;
-  border-bottom: var(--line);
-  background: var(--cream);
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.sprite-card .pet-frame {
-  margin: 78px auto 88px;
-}
-
-.pet-controls {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-top: var(--line);
-}
-
-button {
-  min-height: 48px;
-  border: 0;
-  border-right: 3px solid var(--ink);
-  border-bottom: 3px solid var(--ink);
-  background: var(--cream);
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.76rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-button:nth-child(4n) {
-  border-right: 0;
-}
-
-button:nth-last-child(-n + 3) {
-  border-bottom: 0;
-}
-
-button:hover,
-button:focus-visible,
-button.active {
-  background: var(--blue);
-  color: var(--cream);
-  outline: 0;
 }
 
 .lore-grid {
@@ -401,7 +329,6 @@ footer {
   }
 
   .hero,
-  .split-section,
   .lore-grid,
   .reason-grid {
     grid-template-columns: 1fr;
@@ -421,10 +348,6 @@ footer {
     max-width: calc(100vw - 74px);
   }
 
-  .showcase-pet {
-    transform: scale(1.28);
-  }
-
   .pet-companion {
     --pet-scale: 0.38;
     --pet-x: 18px;
@@ -432,9 +355,6 @@ footer {
     z-index: 8;
   }
 
-  .sprite-card .pet-frame {
-    margin: 50px auto 58px;
-  }
 }
 
 @media (max-width: 520px) {
@@ -455,25 +375,6 @@ footer {
 
   .pet-companion {
     --pet-scale: 0.34;
-  }
-
-  .pet-controls {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  button,
-  button:nth-child(4n),
-  button:nth-last-child(-n + 3) {
-    border-right: 3px solid var(--ink);
-    border-bottom: 3px solid var(--ink);
-  }
-
-  button:nth-child(2n) {
-    border-right: 0;
-  }
-
-  button:last-child {
-    border-bottom: 0;
   }
 
   footer {

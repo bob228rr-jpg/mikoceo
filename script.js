@@ -13,8 +13,6 @@ const states = {
   review: { row: 8, frames: 6, fps: 5 },
 };
 
-const statePets = document.querySelectorAll("[data-state-pet]");
-const buttons = document.querySelectorAll("[data-state]");
 const companion = document.querySelector(".pet-companion");
 const companionFrame = document.querySelector(".companion-frame");
 const sections = {
@@ -23,10 +21,6 @@ const sections = {
   lore: document.querySelector("#lore"),
   signal: document.querySelector("#signal"),
 };
-
-let selectedState = "idle";
-let stateFrame = 0;
-let stateLastFrameAt = 0;
 
 const isCompact = () => matchMedia("(pointer: coarse)").matches || window.innerWidth <= 860;
 
@@ -51,17 +45,6 @@ function spritePosition(element, stateName, frame) {
   element.style.backgroundPosition = `-${frame * FRAME_WIDTH}px -${
     state.row * FRAME_HEIGHT
   }px`;
-}
-
-function setState(nextState) {
-  selectedState = nextState;
-  stateFrame = 0;
-
-  buttons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.state === nextState);
-  });
-
-  statePets.forEach((pet) => spritePosition(pet, selectedState, stateFrame));
 }
 
 function clamp(value, min, max) {
@@ -243,26 +226,10 @@ function updateCompanion(timestamp) {
   }
 }
 
-function updateShowcase(timestamp) {
-  const selected = states[selectedState];
-  const frameInterval = 1000 / selected.fps;
-
-  if (timestamp - stateLastFrameAt >= frameInterval) {
-    stateFrame = (stateFrame + 1) % selected.frames;
-    stateLastFrameAt = timestamp;
-    statePets.forEach((pet) => spritePosition(pet, selectedState, stateFrame));
-  }
-}
-
 function tick(timestamp) {
-  updateShowcase(timestamp);
   updateCompanion(timestamp);
   requestAnimationFrame(tick);
 }
-
-buttons.forEach((button) => {
-  button.addEventListener("click", () => setState(button.dataset.state));
-});
 
 window.addEventListener("pointerdown", () => {
   companionState.waveUntil = performance.now() + 900;
@@ -302,7 +269,6 @@ window.addEventListener("resize", () => {
   chooseNextAutonomousTarget(performance.now(), companionState.readingLore);
 });
 
-setState(selectedState);
 spritePosition(companionFrame, companionState.state, companionState.frame);
 chooseNextAutonomousTarget(performance.now());
 requestAnimationFrame(tick);
