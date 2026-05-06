@@ -16,22 +16,23 @@ const states = {
 const companion = document.querySelector(".pet-companion");
 const companionFrame = document.querySelector(".companion-frame");
 const lore = document.querySelector("#lore");
-
 const compactQuery = matchMedia("(pointer: coarse)");
 
 const companionState = {
+  mode: "roaming",
   x: 28,
   y: 0,
   targetX: 28,
   targetY: 0,
+  movementKind: "run",
   frame: 0,
   lastFrameAt: 0,
   lastTickAt: 0,
   state: "waving",
-  mood: "waiting",
   nextMoveAt: 0,
   pauseUntil: 0,
-  waveUntil: performance.now() + 1200,
+  greetingUntil: 0,
+  scrollLockedUntil: 0,
   readingLore: false,
   readingSettledAt: 0,
 };
@@ -71,20 +72,95 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
-function safePoint(x, y) {
-  const size = petSize();
-
-  return {
-    x: clamp(x, 8, window.innerWidth - size.width - 8),
-    y: clamp(y, 76, window.innerHeight - size.height - 8),
-  };
-}
-
 function setPosition(x, y) {
   companionState.x = x;
   companionState.y = y;
   companion?.style.setProperty("--pet-x", `${x}px`);
   companion?.style.setProperty("--pet-y", `${y}px`);
+}
+
+function clampToViewport(point) {
+  const size = petSize();
+
+  return {
+    x: clamp(point.x, 8, window.innerWidth - size.width - 8),
+    y: clamp(point.y, 76, window.innerHeight - size.height - 8),
+  };
+}
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function randomViewportPoint() {
+  const size = petSize();
+  const compact = isCompact();
+  const topSafe = compact ? 84 : 118;
+  const bottomSafe = window.innerHeight - size.height - (compact ? 18 : 70);
+  const leftSafe = 12;
+  const rightSafe = window.innerWidth - size.width - 12;
+  const heroCtaBand = !compact && window.scrollY < window.innerHeight * 0.65;
+  const avoidCta = (point) => {
+    if (!heroCtaBand) {
+      return point;
+    }
+
+    const ctaXMax = 520;
+    const ctaYMin = window.innerHeight - 285;
+    const ctaYMax = window.innerHeight - 120;
+
+    if (point.x < ctaXMax && point.y > ctaYMin && point.y < ctaYMax) {
+      return { ...point, x: ctaXMax + 34, y: bottomSafe - 28 };
+    }
+
+    return point;
+  };
+
+  return avoidCta({
+    x: randomBetween(leftSafe, Math.max(leftSafe, rightSafe)),
+    y: randomBetween(topSafe, Math.max(topSafe, bottomSafe)),
+  });
+}
+
+function randomEdgeSpawn() {
+  const size = petSize();
+  const edge = ["left", "right", "top", "bottom"][Math.floor(Math.random() * 4)];
+
+  if (edge === "left") {
+    return { x: -size.width - 18, y: randomBetween(90, window.innerHeight - size.height - 20) };
+  }
+
+  if (edge === "right") {
+    return { x: window.innerWidth + 18, y: randomBetween(90, window.innerHeight - size.height - 20) };
+  }
+
+  if (edge === "top") {
+    return { x: randomBetween(18, window.innerWidth - size.width - 18), y: -size.height - 18 };
+  }
+
+  return {
+    x: randomBetween(18, window.innerWidth - size.width - 18),
+    y: window.innerHeight + 18,
+  };
+}
+
+function randomExitPoint() {
+  const size = petSize();
+  const edge = ["left", "right", "top", "bottom"][Math.floor(Math.random() * 4)];
+
+  if (edge === "left") {
+    return { x: -size.width - 24, y: companionState.y };
+  }
+
+  if (edge === "right") {
+    return { x: window.innerWidth + 24, y: companionState.y };
+  }
+
+  if (edge === "top") {
+    return { x: companionState.x, y: -size.height - 24 };
+  }
+
+  return { x: companionState.x, y: window.innerHeight + 24 };
 }
 
 function lorePoint() {
@@ -96,95 +172,80 @@ function lorePoint() {
   }
 
   if (isCompact()) {
-    return safePoint(box.right - 92, box.top + 16);
+    return clampToViewport({ x: box.right - 92, y: box.top + 16 });
   }
 
-  return safePoint(box.left - 92, box.top + Math.min(box.height * 0.62, 230));
+  return clampToViewport({ x: box.left - 92, y: box.top + Math.min(box.height * 0.62, 230) });
 }
 
-function viewportRoutePoints() {
-  const compact = isCompact();
-  const bottom = window.innerHeight - petSize().height - 18;
-  const mid = Math.max(96, window.innerHeight * 0.52);
-
-  if (compact) {
-    return [
-      { id: "mobile-hello", mood: "waving", ...safePoint(18, 86) },
-      { id: "mobile-photo", mood: "idle", ...safePoint(window.innerWidth - 102, 112) },
-      { id: "mobile-middle", mood: "jumping", ...safePoint(38, mid) },
-      { id: "mobile-bottom", mood: "waiting", ...safePoint(window.innerWidth - 104, bottom) },
-    ];
-  }
-
-  return [
-    { id: "bottom-left", mood: "waiting", ...safePoint(32, bottom) },
-    { id: "cta", mood: "jumping", ...safePoint(260, window.innerHeight - 235) },
-    { id: "center", mood: "idle", ...safePoint(window.innerWidth * 0.38, bottom - 58) },
-    { id: "hero-art", mood: "waving", ...safePoint(window.innerWidth * 0.62, bottom - 120) },
-    { id: "bottom-right", mood: "idle", ...safePoint(window.innerWidth - 220, bottom) },
-  ];
-}
-
-function pickNextPoint() {
-  if (companionState.readingLore) {
-    const point = lorePoint();
-    if (point) {
-      return { ...point, mood: "review", id: "lore-read" };
-    }
-  }
-
-  const points = viewportRoutePoints();
-  const farPoints = points.filter((point) => {
-    return Math.hypot(point.x - companionState.x, point.y - companionState.y) > 130;
-  });
-  const candidates = farPoints.length > 0 ? farPoints : points;
-
-  return candidates[Math.floor(Math.random() * candidates.length)];
-}
-
-function setTarget(point, timestamp) {
+function setMoveTarget(point, mode, timestamp, movementKind = "run") {
   companionState.targetX = point.x;
   companionState.targetY = point.y;
-  companionState.mood = point.mood;
-  companionState.nextMoveAt = timestamp + 2400 + Math.random() * 2600;
-
-  if (point.mood === "waving") {
-    companionState.waveUntil = timestamp + 1100;
-  }
+  companionState.mode = mode;
+  companionState.movementKind = movementKind;
+  companionState.pauseUntil = 0;
+  companionState.nextMoveAt = timestamp + randomBetween(3000, 6000);
 }
 
-function chooseState(distance, dx, timestamp) {
-  if (timestamp < companionState.waveUntil) {
-    return "waving";
-  }
+function setPause(timestamp) {
+  companionState.mode = "paused";
+  companionState.pauseUntil = timestamp + randomBetween(1000, 2400);
+}
 
+function startRoamingMove(timestamp) {
+  const target = companionState.readingLore && lorePoint() ? lorePoint() : randomViewportPoint();
+  const distance = Math.hypot(target.x - companionState.x, target.y - companionState.y);
+  const jumpChance = distance < 190 ? 0.22 : 0.08;
+  const movementKind = Math.random() < jumpChance ? "jump" : "run";
+
+  setMoveTarget(target, "roaming", timestamp, movementKind);
+}
+
+function startExit(timestamp) {
+  setMoveTarget(randomExitPoint(), "exiting", timestamp, "run");
+  companionState.scrollLockedUntil = timestamp + 1300;
+}
+
+function startEnter(timestamp) {
+  const spawn = randomEdgeSpawn();
+  setPosition(spawn.x, spawn.y);
+
+  const target = companionState.readingLore && lorePoint() ? lorePoint() : randomViewportPoint();
+  setMoveTarget(target, "entering", timestamp, "run");
+}
+
+function chooseMovementAnimation(dx, distance, movementKind) {
   if (distance > 14) {
-    return dx < 0 ? "running-left" : "running-right";
-  }
-
-  if (companionState.readingLore) {
-    const readingTime = timestamp - companionState.readingSettledAt;
-    return readingTime < 2600 ? "review" : "waiting";
-  }
-
-  if (timestamp < companionState.pauseUntil) {
-    if (companionState.mood === "jumping") {
+    if (movementKind === "jump") {
       return "jumping";
     }
 
-    if (companionState.mood === "waving") {
-      return "waving";
-    }
+    return dx < 0 ? "running-left" : "running-right";
+  }
 
-    return companionState.mood === "idle" ? "idle" : "waiting";
+  return null;
+}
+
+function chooseState(distance, dx, timestamp) {
+  if (companionState.mode === "greeting") {
+    return "waving";
+  }
+
+  const movementState = chooseMovementAnimation(dx, distance, companionState.movementKind);
+  if (movementState) {
+    return movementState;
+  }
+
+  if (companionState.readingLore && (companionState.mode === "paused" || companionState.mode === "roaming")) {
+    const readingTime = timestamp - companionState.readingSettledAt;
+    return readingTime < 2200 ? "review" : "waiting";
+  }
+
+  if (companionState.mode === "paused") {
+    return Math.floor(timestamp / 2200) % 2 === 0 ? "waiting" : "idle";
   }
 
   return "idle";
-}
-
-function startNewMove(timestamp) {
-  setTarget(pickNextPoint(), timestamp);
-  companionState.pauseUntil = 0;
 }
 
 function updateCompanion(timestamp) {
@@ -195,33 +256,45 @@ function updateCompanion(timestamp) {
   const elapsed = Math.min(timestamp - (companionState.lastTickAt || timestamp), 40);
   companionState.lastTickAt = timestamp;
 
+  if (companionState.mode === "greeting" && timestamp >= companionState.greetingUntil) {
+    setPause(timestamp);
+  }
+
+  if (companionState.mode === "paused" && timestamp >= companionState.pauseUntil) {
+    startRoamingMove(timestamp);
+  }
+
+  if (companionState.mode === "roaming" && timestamp >= companionState.nextMoveAt) {
+    startRoamingMove(timestamp);
+  }
+
   const dx = companionState.targetX - companionState.x;
   const dy = companionState.targetY - companionState.y;
   const distance = Math.hypot(dx, dy);
 
-  if (distance < 10) {
-    if (companionState.readingLore && companionState.readingSettledAt === 0) {
-      companionState.readingSettledAt = timestamp;
-    }
-
-    if (!companionState.pauseUntil) {
-      companionState.pauseUntil = timestamp + 900 + Math.random() * 1600;
-    }
-
-    if (!companionState.readingLore && timestamp >= companionState.pauseUntil) {
-      startNewMove(timestamp);
-    }
-  } else {
-    const speed = isCompact() ? 100 : 150;
+  if (distance > 8 && companionState.mode !== "paused" && companionState.mode !== "greeting") {
+    const baseSpeed = isCompact() ? 118 : 172;
+    const speed = companionState.mode === "exiting" || companionState.mode === "entering"
+      ? baseSpeed * 1.55
+      : baseSpeed;
     const step = Math.min(distance, (speed * elapsed) / 1000);
+
     setPosition(
       companionState.x + (dx / distance) * step,
       companionState.y + (dy / distance) * step,
     );
   }
 
-  if (!companionState.readingLore && timestamp >= companionState.nextMoveAt && distance < 80) {
-    startNewMove(timestamp);
+  const arrived = distance <= 10;
+  if (arrived && companionState.mode === "exiting") {
+    startEnter(timestamp + 80);
+  } else if (arrived && companionState.mode === "entering") {
+    setPause(timestamp);
+  } else if (arrived && companionState.mode === "roaming") {
+    if (companionState.readingLore && companionState.readingSettledAt === 0) {
+      companionState.readingSettledAt = timestamp;
+    }
+    setPause(timestamp);
   }
 
   companion.classList.toggle("is-reading", companionState.readingLore);
@@ -247,14 +320,12 @@ function updateCompanion(timestamp) {
 }
 
 function keepInsideViewport() {
-  const point = safePoint(companionState.x, companionState.y);
-  setPosition(point.x, point.y);
-
-  if (!companionState.readingLore) {
-    const target = safePoint(companionState.targetX, companionState.targetY);
-    companionState.targetX = target.x;
-    companionState.targetY = target.y;
+  if (["exiting", "entering"].includes(companionState.mode)) {
+    return;
   }
+
+  const point = clampToViewport({ x: companionState.x, y: companionState.y });
+  setPosition(point.x, point.y);
 }
 
 function tick(timestamp) {
@@ -263,17 +334,20 @@ function tick(timestamp) {
 }
 
 window.addEventListener("pointerdown", () => {
-  companionState.waveUntil = performance.now() + 900;
+  companionState.mode = "greeting";
+  companionState.greetingUntil = performance.now() + 900;
 });
 
 window.addEventListener(
   "scroll",
   () => {
-    keepInsideViewport();
+    const now = performance.now();
 
-    if (companionState.readingLore) {
-      setTarget({ ...lorePoint(), mood: "review", id: "lore-read" }, performance.now());
+    if (now < companionState.scrollLockedUntil || ["exiting", "entering"].includes(companionState.mode)) {
+      return;
     }
+
+    startExit(now);
   },
   { passive: true },
 );
@@ -284,13 +358,8 @@ if (lore && "IntersectionObserver" in window) {
       companionState.readingLore = entry.isIntersecting && entry.intersectionRatio > 0.28;
       companionState.readingSettledAt = 0;
 
-      if (companionState.readingLore) {
-        const point = lorePoint();
-        if (point) {
-          setTarget({ ...point, mood: "review", id: "lore-read" }, performance.now());
-        }
-      } else {
-        startNewMove(performance.now());
+      if (companionState.readingLore && !["exiting", "entering", "greeting"].includes(companionState.mode)) {
+        startRoamingMove(performance.now());
       }
     },
     { threshold: [0.28, 0.5, 0.72] },
@@ -301,11 +370,14 @@ if (lore && "IntersectionObserver" in window) {
 
 window.addEventListener("resize", () => {
   keepInsideViewport();
-  startNewMove(performance.now());
+  startRoamingMove(performance.now());
 });
 
-const start = safePoint(isCompact() ? 18 : 32, isCompact() ? 86 : window.innerHeight - 190);
+const start = clampToViewport({
+  x: isCompact() ? 18 : 32,
+  y: isCompact() ? 86 : window.innerHeight - 180,
+});
 setPosition(start.x, start.y);
 spritePosition(companionFrame, companionState.state, companionState.frame);
-setTarget(pickNextPoint(), performance.now() + 250);
+setMoveTarget(randomViewportPoint(), "roaming", performance.now() + 250, "run");
 requestAnimationFrame(tick);
