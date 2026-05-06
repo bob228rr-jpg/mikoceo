@@ -33,9 +33,9 @@ const companionState = {
   lastFrameAt: 0,
   state: "waving",
   mood: "idle",
-  routeIndex: 0,
-  nextRouteAt: performance.now() + 2200,
-  waveUntil: performance.now() + 1700,
+  routeIndex: -1,
+  nextRouteAt: performance.now() + 350,
+  waveUntil: performance.now() + 900,
   readingLore: false,
   readingSettledAt: 0,
 };
@@ -90,13 +90,22 @@ function getRoutePoints() {
     points.push({
       id: "hero-left",
       mood: "idle",
-      ...safePoint(compact ? 18 : hero.left + 28, compact ? 86 : hero.bottom - 160),
+      ...safePoint(compact ? 18 : hero.left + 28, compact ? 86 : hero.bottom - 170),
     });
 
     points.push({
       id: "hero-art",
       mood: "waving",
-      ...safePoint(compact ? 78 : hero.right - 210, compact ? 148 : hero.top + 420),
+      ...safePoint(
+        compact ? window.innerWidth - 98 : hero.right - 210,
+        compact ? 146 : hero.top + 420,
+      ),
+    });
+
+    points.push({
+      id: "hero-cta",
+      mood: "jumping",
+      ...safePoint(compact ? 28 : hero.left + 260, compact ? 430 : hero.bottom - 105),
     });
   }
 
@@ -142,7 +151,7 @@ function setAutonomousTarget(point, timestamp) {
     companionState.waveUntil = timestamp + 1100;
   }
 
-  companionState.nextRouteAt = timestamp + 3200 + Math.random() * 2600;
+  companionState.nextRouteAt = timestamp + 1900 + Math.random() * 1900;
 }
 
 function chooseNextAutonomousTarget(timestamp, forceLore = false) {
@@ -195,13 +204,19 @@ function updateCompanion(timestamp) {
   const dx = companionState.targetX - companionState.x;
   const dy = companionState.targetY - companionState.y;
   const distance = Math.hypot(dx, dy);
-  const speed = isCompact() ? 0.055 : 0.075;
+  const speed = isCompact() ? 0.09 : 0.105;
 
   companionState.x += dx * speed;
   companionState.y += dy * speed;
-  companion.style.setProperty("--pet-x", `${companionState.x}px`);
-  companion.style.setProperty("--pet-y", `${companionState.y}px`);
   companion.classList.toggle("is-reading", companionState.readingLore);
+
+  if (companionState.readingLore) {
+    companion.style.setProperty("--pet-x", `${companionState.x}px`);
+    companion.style.setProperty("--pet-y", `${companionState.y}px`);
+  } else {
+    companion.style.removeProperty("--pet-x");
+    companion.style.removeProperty("--pet-y");
+  }
 
   if (distance < 18 && companionState.readingLore && companionState.readingSettledAt === 0) {
     companionState.readingSettledAt = timestamp;
@@ -270,5 +285,4 @@ window.addEventListener("resize", () => {
 });
 
 spritePosition(companionFrame, companionState.state, companionState.frame);
-chooseNextAutonomousTarget(performance.now());
 requestAnimationFrame(tick);

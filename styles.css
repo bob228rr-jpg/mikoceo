@@ -218,15 +218,36 @@ footer {
     scale(var(--pet-scale, 0.62));
   transform-origin: center bottom;
   transition: filter 160ms ease;
+  animation: companion-roam 9s steps(1, end) infinite;
   will-change: transform;
 }
 
 .pet-companion.is-reading {
+  animation: none;
   filter: drop-shadow(0 0 0 var(--yellow)) drop-shadow(0 10px 0 rgba(23, 18, 13, 0.18));
 }
 
 .companion-frame {
   transform: none;
+}
+
+@keyframes companion-roam {
+  0%,
+  100% {
+    transform: translate3d(32px, calc(100vh - 190px), 0) scale(var(--pet-scale, 0.62));
+  }
+
+  25% {
+    transform: translate3d(250px, calc(100vh - 178px), 0) scale(var(--pet-scale, 0.62));
+  }
+
+  50% {
+    transform: translate3d(460px, calc(100vh - 220px), 0) scale(var(--pet-scale, 0.62));
+  }
+
+  75% {
+    transform: translate3d(150px, calc(100vh - 250px), 0) scale(var(--pet-scale, 0.62));
+  }
 }
 
 .lore-grid {
@@ -353,6 +374,25 @@ footer {
     --pet-x: 18px;
     --pet-y: 86px;
     z-index: 8;
+  }
+
+  @keyframes companion-roam {
+    0%,
+    100% {
+      transform: translate3d(18px, 86px, 0) scale(var(--pet-scale, 0.38));
+    }
+
+    25% {
+      transform: translate3d(96px, 118px, 0) scale(var(--pet-scale, 0.38));
+    }
+
+    50% {
+      transform: translate3d(210px, 96px, 0) scale(var(--pet-scale, 0.38));
+    }
+
+    75% {
+      transform: translate3d(104px, 188px, 0) scale(var(--pet-scale, 0.38));
+    }
   }
 
 }
