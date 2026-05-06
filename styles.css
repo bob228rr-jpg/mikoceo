@@ -211,24 +211,6 @@ footer {
   transform: scale(1.65);
 }
 
-.ticker {
-  display: flex;
-  gap: 0;
-  overflow: hidden;
-  border-block: var(--line);
-  background: var(--red);
-  color: var(--cream);
-}
-
-.ticker span {
-  flex: 0 0 auto;
-  padding: 16px 24px;
-  border-right: 3px solid var(--ink);
-  font-size: clamp(0.92rem, 1.6vw, 1.2rem);
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
 .split-section {
   display: grid;
   grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1fr);
