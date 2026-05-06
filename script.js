@@ -13,12 +13,10 @@ const states = {
   review: { row: 8, frames: 6, fps: 5 },
 };
 
-const heroPets = document.querySelectorAll("[data-animated-pet]");
 const statePets = document.querySelectorAll("[data-state-pet]");
 const buttons = document.querySelectorAll("[data-state]");
 
 let selectedState = "idle";
-let heroFrame = 0;
 let stateFrame = 0;
 let lastFrameAt = 0;
 
@@ -42,13 +40,10 @@ function setState(nextState) {
 
 function tick(timestamp) {
   if (timestamp - lastFrameAt >= 120) {
-    const heroState = states.waving;
     const selected = states[selectedState];
-    heroFrame = (heroFrame + 1) % heroState.frames;
     stateFrame = (stateFrame + 1) % selected.frames;
     lastFrameAt = timestamp;
 
-    heroPets.forEach((pet) => position(pet, "waving", heroFrame));
     statePets.forEach((pet) => position(pet, selectedState, stateFrame));
   }
 
@@ -60,5 +55,4 @@ buttons.forEach((button) => {
 });
 
 setState(selectedState);
-heroPets.forEach((pet) => position(pet, "waving", heroFrame));
 requestAnimationFrame(tick);

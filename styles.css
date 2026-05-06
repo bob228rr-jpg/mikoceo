@@ -30,6 +30,7 @@ body {
     var(--paper);
   background-size: 22px 22px;
   color: var(--ink);
+  overflow-x: hidden;
 }
 
 a {
@@ -116,11 +117,15 @@ p {
 }
 
 h1 {
-  max-width: 760px;
+  max-width: 700px;
   margin: 0;
-  font-size: clamp(4.1rem, 10.8vw, 9.6rem);
+  font-size: clamp(4rem, 8.2vw, 8rem);
   line-height: 0.82;
   text-transform: uppercase;
+}
+
+h1 span {
+  display: block;
 }
 
 h2 {
@@ -176,23 +181,20 @@ footer {
 }
 
 .hero-art {
+  margin: 0;
   display: grid;
   place-items: center;
   min-height: 520px;
 }
 
-.burst {
-  width: min(88vw, 520px);
+.hero-art img {
+  width: min(88vw, 560px);
+  max-width: calc(100vw - 72px);
   aspect-ratio: 1;
-  display: grid;
-  place-items: center;
+  object-fit: cover;
   border: var(--line);
-  border-radius: 50%;
-  background:
-    linear-gradient(90deg, transparent 48%, rgba(23, 18, 13, 0.16) 49%, transparent 51%),
-    linear-gradient(0deg, transparent 48%, rgba(23, 18, 13, 0.16) 49%, transparent 51%),
-    var(--yellow);
   box-shadow: 14px 14px 0 var(--ink);
+  background: var(--blue);
 }
 
 .pet-frame {
@@ -203,10 +205,6 @@ footer {
   background-size: 1536px 1872px;
   image-rendering: pixelated;
   transform-origin: center;
-}
-
-.hero-pet {
-  transform: scale(2.05);
 }
 
 .showcase-pet {
@@ -237,6 +235,10 @@ footer {
   align-items: center;
   gap: clamp(28px, 6vw, 72px);
   padding: clamp(58px, 9vw, 108px) 0;
+}
+
+.pet-section {
+  scroll-margin-top: 86px;
 }
 
 .sprite-card {
@@ -381,7 +383,8 @@ footer {
 
 @media (max-width: 860px) {
   .topbar {
-    grid-template-columns: auto auto;
+    display: flex;
+    justify-content: space-between;
   }
 
   nav {
@@ -408,12 +411,9 @@ footer {
     order: -1;
   }
 
-  .burst {
-    width: min(82vw, 370px);
-  }
-
-  .hero-pet {
-    transform: scale(1.42);
+  .hero-art img {
+    width: min(76vw, 350px);
+    max-width: calc(100vw - 74px);
   }
 
   .showcase-pet {
@@ -438,7 +438,7 @@ footer {
   }
 
   h1 {
-    font-size: clamp(3.35rem, 18vw, 5.8rem);
+    font-size: clamp(3rem, 14vw, 4.6rem);
   }
 
   .pet-controls {
