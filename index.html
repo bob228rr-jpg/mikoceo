@@ -5,33 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="PikaCap is a pixel-art yellow mascot in a red cap."
+      content="PikaCap, a compact pixel-art Codex digital pet."
     />
     <title>PikaCap</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="stage" aria-label="PikaCap showcase">
-      <section class="hero">
-        <div class="copy">
-          <p class="eyebrow">Pixel mascot drop</p>
-          <h1>PikaCap</h1>
-          <p class="summary">
-            A bright, game-ready mascot with a red cap, crisp pixel edges, and
-            just enough electric attitude for the whole screen.
-          </p>
-          <a class="button" href="./assets/pikacap-spritesheet.webp" download>
-            Download spritesheet
-          </a>
+    <main class="pet-shell" aria-label="PikaCap digital pet">
+      <section class="pet-panel">
+        <header class="pet-header">
+          <div>
+            <p class="label">Codex digital pet</p>
+            <h1>PikaCap</h1>
+          </div>
+          <span class="status" id="statusLabel">idle</span>
+        </header>
+
+        <div class="viewport" aria-live="polite">
+          <div
+            class="pet"
+            id="pet"
+            role="img"
+            aria-label="PikaCap pixel-art mascot"
+          ></div>
         </div>
 
-        <figure class="sprite">
-          <img
-            src="./assets/pikacap-spritesheet.webp"
-            alt="PikaCap pixel-art mascot spritesheet"
-          />
-        </figure>
+        <div class="controls" aria-label="Pet states">
+          <button class="active" type="button" data-state="idle">Idle</button>
+          <button type="button" data-state="running">Run</button>
+          <button type="button" data-state="waving">Wave</button>
+          <button type="button" data-state="jumping">Jump</button>
+          <button type="button" data-state="waiting">Wait</button>
+          <button type="button" data-state="review">Review</button>
+          <button type="button" data-state="failed">Failed</button>
+        </div>
+
+        <p class="notes">
+          Pixel-art-adjacent mascot sprite, chunky outline, limited palette,
+          flat cel shading, readable red cap slogan.
+        </p>
       </section>
     </main>
+
+    <script src="./script.js"></script>
   </body>
 </html>
